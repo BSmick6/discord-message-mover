@@ -19,6 +19,7 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for in-progress games. In production, you'd want to use a DB
 const activeGames = {};
+let message;
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
@@ -55,8 +56,12 @@ app.post('/interactions', async function (req, res) {
 
     // "move" message command
     if (name === 'move') {
-      console.log('appcomm', data.resolved);
       // get data
+      const { messages } = data.resolved
+      const message_id = Object.keys(messages)[0]
+      message = messages[message_id]
+
+      // send message component
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
@@ -78,20 +83,24 @@ app.post('/interactions', async function (req, res) {
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
-    const {channels} = data.resolved
+    const { channels } = data.resolved
     const channel_id = Object.keys(channels)[0]
-    console.log('msgcomp channel', data.resolved);
+
+    // create new message
     try {
       await DiscordRequest(`channels/${channel_id}/messages`, {
         method: 'POST',
+        body: message
       })
     } catch (error) {
-      
+      console.error(error);
     }
+
+    // return success or something
     return res.send({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: {
-        content: 'you selected ' + Object.values(data.resolved.channels)[0].name
+        content: 'you selected ' + channels[channel_id].name
       }
     })
   }
