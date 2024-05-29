@@ -40,6 +40,12 @@ const CHALLENGE_COMMAND = {
   type: 1,
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
+// Command with message
+const MESSAGE_COMMAND = {
+  name: 'move',
+  type: 3
+}
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, MESSAGE_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
