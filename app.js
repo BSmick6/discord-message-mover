@@ -89,9 +89,24 @@ app.post('/interactions', async function (req, res) {
 
     // create new message
     try {
-      await DiscordRequest(`channels/${channel_id}/messages`, {
+      let webhookResponse = await DiscordRequest(`channels/${channel_id}/webhooks`, {
         method: 'POST',
-        body: message
+        body: {
+          name: 'mover'
+        }
+      })
+      let webhook
+      if (webhookResponse.ok) {
+        webhook = await webhookResponse.json()
+      }
+      await DiscordRequest(`webhooks/${webhook.id}/${webhook.token}`, {
+        method: 'POST',
+        body: {
+          content: message.content,
+          username: message.author.global_name,
+          avatar_url: `https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}`,
+          flags: 1 << 12
+        }
       })
     } catch (error) {
       console.error(error);
