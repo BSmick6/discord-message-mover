@@ -66,6 +66,7 @@ app.post('/interactions', async function (req, res) {
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
           content: 'we in the msg command',
+          flags: InteractionResponseFlags.EPHEMERAL,
           components: [
             {
               type: MessageComponentTypes.ACTION_ROW,
@@ -100,7 +101,8 @@ app.post('/interactions', async function (req, res) {
     return res.send({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: {
-        content: 'you selected ' + channels[channel_id].name
+        content: 'you selected ' + channels[channel_id].name,
+        flags: InteractionResponseFlags.EPHEMERAL,
       }
     })
   }
