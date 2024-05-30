@@ -5,10 +5,8 @@ import {
   InteractionResponseType,
   InteractionResponseFlags,
   MessageComponentTypes,
-  ButtonStyleTypes,
 } from 'discord-interactions';
-import { VerifyDiscordRequest, getRandomEmoji, DiscordRequest } from './utils.js';
-import { getShuffledOptions, getResult } from './game.js';
+import { VerifyDiscordRequest, DiscordRequest } from './utils.js';
 
 // Create an express app
 const app = express();
@@ -17,8 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Parse request body and verifies incoming requests using discord-interactions package
 app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
-// Store for in-progress games. In production, you'd want to use a DB
-const activeGames = {};
+// Store for message component work
 let message, thread;
 
 /**
