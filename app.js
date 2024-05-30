@@ -23,7 +23,7 @@ let message, thread;
  */
 app.post('/interactions', async function (req, res) {
   // Interaction type and data
-  const { type, data } = req.body;
+  const { type, data, guild_id } = req.body;
 
   /**
    * Handle verification requests
@@ -41,7 +41,6 @@ app.post('/interactions', async function (req, res) {
 
     // clear stray webhooks
     if (name === 'clear') {
-      const guild_id = '1244785690747605062'
       const webhooks = await (await DiscordRequest(`guilds/${guild_id}/webhooks`, {})).json()
 
       await Promise.all(webhooks.map(async (webhook) => {
@@ -52,7 +51,7 @@ app.post('/interactions', async function (req, res) {
       res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: 'deleted all hooks',
+          content: 'cleared the hooks',
           flags: InteractionResponseFlags.EPHEMERAL
         }
       })
