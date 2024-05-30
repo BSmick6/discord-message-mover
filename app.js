@@ -44,14 +44,22 @@ app.post('/interactions', async function (req, res) {
 
     // "test" command
     if (name === 'test') {
-      // Send a message into the channel where command was triggered from
-      return res.send({
+      const guild_id = '1244785690747605062'
+      const webhooks = await (await DiscordRequest(`guilds/${guild_id}/webhooks`, {})).json()
+      console.log('webhooks', webhooks)
+
+      await Promise.all(webhooks.map(async (webhook) => {
+        await DiscordRequest(`webhooks/${webhook.id}`, {
+          method: 'DELETE'
+        })
+      }))
+      res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          // Fetches a random emoji to send from a helper function
-          content: 'hello world ' + getRandomEmoji(),
-        },
-      });
+          content: 'deleted all hooks',
+          flags: InteractionResponseFlags.EPHEMERAL
+        }
+      })
     }
 
     // "move" message command
@@ -107,6 +115,9 @@ app.post('/interactions', async function (req, res) {
           avatar_url: `https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}`,
           flags: 1 << 12
         }
+      })
+      await DiscordRequest(`webhooks/${webhook.id}`, {
+        method: 'DELETE'
       })
     } catch (error) {
       console.error(error);
