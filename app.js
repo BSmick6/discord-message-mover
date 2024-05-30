@@ -23,7 +23,7 @@ let message, thread;
  */
 app.post('/interactions', async function (req, res) {
   // Interaction type and data
-  const { type, id, data } = req.body;
+  const { type, data } = req.body;
 
   /**
    * Handle verification requests
@@ -39,11 +39,10 @@ app.post('/interactions', async function (req, res) {
   if (type === InteractionType.APPLICATION_COMMAND) {
     const { name } = data;
 
-    // "test" command
-    if (name === 'test') {
+    // clear stray webhooks
+    if (name === 'clear') {
       const guild_id = '1244785690747605062'
       const webhooks = await (await DiscordRequest(`guilds/${guild_id}/webhooks`, {})).json()
-      console.log('webhooks', webhooks)
 
       await Promise.all(webhooks.map(async (webhook) => {
         await DiscordRequest(`webhooks/${webhook.id}`, {
@@ -59,8 +58,8 @@ app.post('/interactions', async function (req, res) {
       })
     }
 
-    // "move" message command
-    if (name === 'move') {
+    // message command for migrate a thread to a forum post
+    if (name === 'Move thread to forum post') {
       // get data
       const { messages } = data.resolved
       const message_id = Object.keys(messages)[0]
