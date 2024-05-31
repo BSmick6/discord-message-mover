@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for message component work
-let message, thread;
+let thread_id;
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
@@ -42,7 +42,7 @@ app.post('/interactions', async function (req, res) {
     // clear stray webhooks
     if (name === 'clear') {
       const webhooks = await (await DiscordRequest(`guilds/${guild_id}/webhooks`, {})).json()
-
+      console.log('hooks', webhooks);
       await Promise.all(webhooks.map(async (webhook) => {
         await DiscordRequest(`webhooks/${webhook.id}`, {
           method: 'DELETE'
@@ -60,14 +60,8 @@ app.post('/interactions', async function (req, res) {
     // message command for migrate a thread to a forum post
     if (name === 'Move thread to forum post') {
       // get data
-      const { messages } = data.resolved
-      const message_id = Object.keys(messages)[0]
-      message = messages[message_id]
-
-      // save thread for later
-      if (message.thread) {
-        thread = message.thread
-      }
+      const { target_id } = data
+      thread_id = data.resolved.messages[target_id]?.thread.id
 
       // send message component
       return res.send({
@@ -92,13 +86,12 @@ app.post('/interactions', async function (req, res) {
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
-    const { channels } = data.resolved
-    const channel_id = Object.keys(channels)[0]
-    const channel = channels[channel_id]
+    const forum_post_id = data.values[0]
+    const { name: post_name, parent_id: forum_id } = data.resolved.channels[forum_post_id]
 
     // create new message
     try {
-      let webhookResponse = await DiscordRequest(`channels/${channel.parent_id || channel_id}/webhooks`, {
+      let webhookResponse = await DiscordRequest(`channels/${forum_id}/webhooks`, {
         method: 'POST',
         body: {
           name: 'mover'
@@ -108,9 +101,9 @@ app.post('/interactions', async function (req, res) {
       if (webhookResponse.ok) {
         webhook = await webhookResponse.json()
       }
-      if (thread) {
+      if (thread_id) {
         function moveMessage(messageToSend) {
-          return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${channel_id}`, {
+          return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
             method: 'POST',
             body: {
               content: messageToSend.content,
@@ -121,8 +114,7 @@ app.post('/interactions', async function (req, res) {
           }).then(() => new Promise(resolve => setTimeout(resolve, 400)))
         }
 
-        const messages = (await (await DiscordRequest(`channels/${thread.id}/messages?limit=100`, {})).json()).reverse()
-        console.log('msg count', messages.length);
+        const messages = (await (await DiscordRequest(`channels/${thread_id}/messages?limit=100`, {})).json()).reverse()
         let result = messages.reduce((accumulatorPromise, currentMsg) => {
           return accumulatorPromise.then(() => {
             if (currentMsg.content) {
@@ -139,19 +131,6 @@ app.post('/interactions', async function (req, res) {
             method: 'DELETE'
           })
         });
-      } else {
-        await DiscordRequest(`webhooks/${webhook.id}/${webhook.token}`, {
-          method: 'POST',
-          body: {
-            content: message.content,
-            username: message.author.global_name,
-            avatar_url: `https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}`,
-            flags: 1 << 12
-          }
-        })
-        await DiscordRequest(`webhooks/${webhook.id}`, {
-          method: 'DELETE'
-        })
       }
     } catch (error) {
       console.error(error);
@@ -161,7 +140,7 @@ app.post('/interactions', async function (req, res) {
     return res.send({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: {
-        content: 'you selected ' + channels[channel_id].name,
+        content: 'you selected ' + post_name,
         flags: InteractionResponseFlags.EPHEMERAL,
       }
     })
