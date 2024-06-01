@@ -99,37 +99,35 @@ app.post('/interactions', async function (req, res) {
 
     // create new message
     try {
-      if (globalData.thread_id) {
-        const webhook = await CreateWebhook (forum_id, 'Message Mover')
-        function moveMessage(messageToSend) {
-          return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
-            method: 'POST',
-            body: {
-              content: messageToSend.content,
-              username: messageToSend.author.global_name,
-              avatar_url: `https://cdn.discordapp.com/avatars/${messageToSend.author.id}/${messageToSend.author.avatar}`,
-              flags: 1 << 12
-            }
-          }).then(() => new Promise(resolve => setTimeout(resolve, 400)))
-        }
-
-        let result = globalData.messages.reduce((accumulatorPromise, currentMsg) => {
-          return accumulatorPromise.then(() => {
-            if (currentMsg.content) {
-              return moveMessage(currentMsg);
-            } else {
-              return
-            }
-          });
-        }, Promise.resolve());
-
-        result.then(() => {
-          console.log("All Promises Resolved !!✨")
-          DiscordRequest(`webhooks/${webhook.id}`, {
-            method: 'DELETE'
-          })
-        });
+      const webhook = await CreateWebhook(forum_id, 'Message Mover')
+      function moveMessage(messageToSend) {
+        return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
+          method: 'POST',
+          body: {
+            content: messageToSend.content,
+            username: messageToSend.author.global_name,
+            avatar_url: `https://cdn.discordapp.com/avatars/${messageToSend.author.id}/${messageToSend.author.avatar}`,
+            flags: 1 << 12
+          }
+        }).then(() => new Promise(resolve => setTimeout(resolve, 400)))
       }
+
+      let result = globalData.messages.reduce((accumulatorPromise, currentMsg) => {
+        return accumulatorPromise.then(() => {
+          if (currentMsg.content) {
+            return moveMessage(currentMsg);
+          } else {
+            return
+          }
+        });
+      }, Promise.resolve());
+
+      result.then(() => {
+        console.log("All Promises Resolved !!✨")
+        DiscordRequest(`webhooks/${webhook.id}`, {
+          method: 'DELETE'
+        })
+      });
     } catch (error) {
       console.error(error);
     }
