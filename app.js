@@ -6,7 +6,7 @@ import {
   InteractionResponseFlags,
   MessageComponentTypes,
 } from 'discord-interactions';
-import { VerifyDiscordRequest, DiscordRequest, CreateWebhook } from './utils.js';
+import { VerifyDiscordRequest, DiscordRequest, CreateWebhook, GetMessagesFromThread } from './utils.js';
 
 // Create an express app
 const app = express();
@@ -16,7 +16,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for message component work
-let thread_id;
+const globalData = {
+  thread_id: '',
+  messages: []
+}
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
@@ -59,9 +62,12 @@ app.post('/interactions', async function (req, res) {
 
     // message command for migrating a thread to a forum post
     if (name === 'Move thread to forum post') {
-      // get data
+      // message id
       const { target_id } = data
-      thread_id = data.resolved.messages[target_id]?.thread.id
+      // use message id to get thread id
+      globalData.thread_id = data.resolved.messages[target_id]?.thread.id
+      // get messages from thread
+      globalData.messages = await GetMessagesFromThread(globalData.thread_id)
 
       // send message component
       return res.send({
@@ -93,7 +99,7 @@ app.post('/interactions', async function (req, res) {
 
     // create new message
     try {
-      if (thread_id) {
+      if (globalData.thread_id) {
         const webhook = await CreateWebhook (forum_id, 'Message Mover')
         function moveMessage(messageToSend) {
           return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
@@ -107,8 +113,7 @@ app.post('/interactions', async function (req, res) {
           }).then(() => new Promise(resolve => setTimeout(resolve, 400)))
         }
 
-        const messages = (await (await DiscordRequest(`channels/${thread_id}/messages?limit=100`, {})).json()).reverse()
-        let result = messages.reduce((accumulatorPromise, currentMsg) => {
+        let result = globalData.messages.reduce((accumulatorPromise, currentMsg) => {
           return accumulatorPromise.then(() => {
             if (currentMsg.content) {
               return moveMessage(currentMsg);

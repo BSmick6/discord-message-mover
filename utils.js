@@ -39,12 +39,17 @@ export async function DiscordRequest(endpoint, options) {
   return res;
 }
 
+export async function GetMessagesFromThread(thread_id) {
+  const response = await DiscordRequest(`channels/${thread_id}/messages?limit=100`, {})
+  return (await response.json()).reverse()
+}
+
 export async function CreateWebhook(channel_id, name) {
   const response = await DiscordRequest(`channels/${channel_id}/webhooks`, {
     method: 'POST',
     body: { name }
   })
-  return response.ok ? response.json() : response.error()
+  return response.json()
 }
 
 export async function InstallGlobalCommands(appId, commands) {
