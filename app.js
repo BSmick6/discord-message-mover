@@ -6,7 +6,7 @@ import {
   InteractionResponseFlags,
   MessageComponentTypes,
 } from 'discord-interactions';
-import { VerifyDiscordRequest, DiscordRequest, CreateWebhook, GetMessagesFromThread } from './utils.js';
+import { VerifyDiscordRequest, DiscordRequest, CreateWebhook, GetMessagesFromThread, CreateFirstPostMessage } from './utils.js';
 
 // Create an express app
 const app = express();
@@ -97,6 +97,7 @@ app.post('/interactions', async function (req, res) {
   if (type === InteractionType.MESSAGE_COMPONENT) {
     const forum_id = data.values[0]
     const { name: forum_name } = data.resolved.channels[forum_id]
+    const firstMessage = CreateFirstPostMessage(globalData.ogThreadMsg)
 
     try {
       // create new forum post
@@ -105,7 +106,7 @@ app.post('/interactions', async function (req, res) {
         body: {
           name: globalData.ogThreadMsg.thread.name,
           message: {
-            content: globalData.ogThreadMsg.content
+            content: firstMessage
           },
           applied_tags: []
         }

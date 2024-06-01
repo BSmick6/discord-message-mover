@@ -51,6 +51,22 @@ export async function GetMessagesFromThread(thread) {
   return messages.reverse()
 }
 
+export function CreateFirstPostMessage(message) {
+  const dateTime = new Date(message.timestamp)
+  const dateFormat = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+  const timeFormat = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+  })
+  return `${message.content}
+👤 original author: <@${message.author.id}>
+🕒 originally posted on ${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}`
+}
+
 export async function CreateWebhook(channel_id, name) {
   const response = await DiscordRequest(`channels/${channel_id}/webhooks`, {
     method: 'POST',
