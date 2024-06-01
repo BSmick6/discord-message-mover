@@ -6,7 +6,7 @@ import {
   InteractionResponseFlags,
   MessageComponentTypes,
 } from 'discord-interactions';
-import { VerifyDiscordRequest, DiscordRequest } from './utils.js';
+import { VerifyDiscordRequest, DiscordRequest, CreateWebhook } from './utils.js';
 
 // Create an express app
 const app = express();
@@ -93,17 +93,8 @@ app.post('/interactions', async function (req, res) {
 
     // create new message
     try {
-      let webhookResponse = await DiscordRequest(`channels/${forum_id}/webhooks`, {
-        method: 'POST',
-        body: {
-          name: 'mover'
-        }
-      })
-      let webhook
-      if (webhookResponse.ok) {
-        webhook = await webhookResponse.json()
-      }
       if (thread_id) {
+        const webhook = await CreateWebhook (forum_id, 'Message Mover')
         function moveMessage(messageToSend) {
           return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
             method: 'POST',

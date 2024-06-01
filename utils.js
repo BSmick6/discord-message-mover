@@ -39,6 +39,14 @@ export async function DiscordRequest(endpoint, options) {
   return res;
 }
 
+export async function CreateWebhook(channel_id, name) {
+  const response = await DiscordRequest(`channels/${channel_id}/webhooks`, {
+    method: 'POST',
+    body: { name }
+  })
+  return response.ok ? response.json() : response.error()
+}
+
 export async function InstallGlobalCommands(appId, commands) {
   // API endpoint to overwrite global commands
   const endpoint = `applications/${appId}/commands`;
