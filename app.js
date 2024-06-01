@@ -17,7 +17,7 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
 // Store for message component work
 const globalData = {
-  thread_id: '',
+  ogThreadMsg: {},
   messages: []
 }
 
@@ -65,15 +65,15 @@ app.post('/interactions', async function (req, res) {
       // message id
       const { target_id } = data
       // use message id to get thread id
-      globalData.thread_id = data.resolved.messages[target_id]?.thread.id
+      globalData.ogThreadMsg = data.resolved.messages[target_id]
       // get messages from thread
-      globalData.messages = await GetMessagesFromThread(globalData.thread_id)
+      globalData.messages = await GetMessagesFromThread(globalData.ogThreadMsg.thread.id)
 
       // send message component
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: 'ok, I got the thread',
+          content: 'ok, I got the thread and its messages',
           flags: InteractionResponseFlags.EPHEMERAL,
           components: [
             {
@@ -82,9 +82,10 @@ app.post('/interactions', async function (req, res) {
                 {
                   type: MessageComponentTypes.CHANNEL_SELECT,
                   custom_id: 'channel_select',
-                  channel_types: [11, 12],
-                  placeholder: 'where we movin too? 👀'
+                  channel_types: [15],
+                  placeholder: 'Which forum do you want to create the new post in? 👀'
                 }
+                // TODO: select tag
               ]
             }
           ]
@@ -94,14 +95,28 @@ app.post('/interactions', async function (req, res) {
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
-    const forum_post_id = data.values[0]
-    const { name: post_name, parent_id: forum_id } = data.resolved.channels[forum_post_id]
+    const forum_id = data.values[0]
+    const { name: forum_name } = data.resolved.channels[forum_id]
 
-    // create new message
     try {
+      // create new forum post
+      const newPost = await (await DiscordRequest(`channels/${forum_id}/threads`, {
+        method: 'POST',
+        body: {
+          name: globalData.ogThreadMsg.thread.name,
+          message: {
+            content: globalData.ogThreadMsg.content
+          },
+          applied_tags: []
+        }
+      })).json()
+
+      // webhook for posting messages
       const webhook = await CreateWebhook(forum_id, 'Message Mover')
+
+      // an attempt to keep mesasges in order
       function moveMessage(messageToSend) {
-        return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${forum_post_id}`, {
+        return DiscordRequest(`webhooks/${webhook.id}/${webhook.token}?thread_id=${newPost.id}`, {
           method: 'POST',
           body: {
             content: messageToSend.content,
@@ -136,7 +151,7 @@ app.post('/interactions', async function (req, res) {
     return res.send({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: {
-        content: 'you selected ' + post_name,
+        content: 'you selected ' + forum_name,
         flags: InteractionResponseFlags.EPHEMERAL,
       }
     })
