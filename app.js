@@ -57,7 +57,7 @@ app.post('/interactions', async function (req, res) {
       })
     }
 
-    // message command for migrate a thread to a forum post
+    // message command for migrating a thread to a forum post
     if (name === 'Move thread to forum post') {
       // get data
       const { target_id } = data
@@ -67,7 +67,7 @@ app.post('/interactions', async function (req, res) {
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: 'we in the msg command',
+          content: 'ok, I got the thread',
           flags: InteractionResponseFlags.EPHEMERAL,
           components: [
             {
@@ -75,7 +75,9 @@ app.post('/interactions', async function (req, res) {
               components: [
                 {
                   type: MessageComponentTypes.CHANNEL_SELECT,
-                  custom_id: 'channel_select'
+                  custom_id: 'channel_select',
+                  channel_types: [11, 12],
+                  placeholder: 'where we movin too? 👀'
                 }
               ]
             }
