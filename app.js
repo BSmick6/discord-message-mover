@@ -67,7 +67,7 @@ app.post('/interactions', async function (req, res) {
       // use message id to get thread id
       globalData.ogThreadMsg = data.resolved.messages[target_id]
       // get messages from thread
-      globalData.messages = await GetMessagesFromThread(globalData.ogThreadMsg.thread.id)
+      globalData.messages = await GetMessagesFromThread(globalData.ogThreadMsg.thread)
 
       // send message component
       return res.send({
@@ -124,7 +124,7 @@ app.post('/interactions', async function (req, res) {
             avatar_url: `https://cdn.discordapp.com/avatars/${messageToSend.author.id}/${messageToSend.author.avatar}`,
             flags: 1 << 12
           }
-        }).then(() => new Promise(resolve => setTimeout(resolve, 400)))
+        }).then(() => new Promise(resolve => setTimeout(resolve, 2000)))
       }
 
       let result = globalData.messages.reduce((accumulatorPromise, currentMsg) => {

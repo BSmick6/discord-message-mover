@@ -39,9 +39,16 @@ export async function DiscordRequest(endpoint, options) {
   return res;
 }
 
-export async function GetMessagesFromThread(thread_id) {
-  const response = await DiscordRequest(`channels/${thread_id}/messages?limit=100`, {})
-  return (await response.json()).reverse()
+export async function GetMessagesFromThread(thread) {
+  let messages = []
+  let lastMsgID = null;
+  do {
+    const before = lastMsgID ? `&before=${lastMsgID}` : '';
+    const getMsgsResp = await DiscordRequest(`channels/${thread.id}/messages?limit=100${before}`, {})
+    messages = messages.concat(await getMsgsResp.json())
+    lastMsgID = messages.at(-1).id
+  } while (messages.length < thread.message_count)
+  return messages.reverse()
 }
 
 export async function CreateWebhook(channel_id, name) {
