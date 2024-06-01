@@ -96,7 +96,7 @@ app.post('/interactions', async function (req, res) {
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
     const forum_id = data.values[0]
-    const { name: forum_name } = data.resolved.channels[forum_id]
+    const { available_tags: [{id: tag_id}], name: forum_name } = data.resolved.channels[forum_id]
     const firstMessage = CreateFirstPostMessage(globalData.ogThreadMsg)
 
     try {
@@ -108,7 +108,7 @@ app.post('/interactions', async function (req, res) {
           message: {
             content: firstMessage
           },
-          applied_tags: []
+          applied_tags: [tag_id]
         }
       })).json()
 
